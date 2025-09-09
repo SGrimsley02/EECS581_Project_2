@@ -7,13 +7,17 @@ This is the repository for Team 28's minesweeper project - *EECS 581 Spring 2025
 ```
 .
 ├── docs
-├── project
-└──── src
+│   └── ...
+├── public
+│   └── ...
+└── src
+    └── app
+        └── ...
 ```
 
-- `docs` contains all of our documentation.
-- `project` contains all code and files related to running the project.
-- `src` contains the source code for the project.
+- `docs` - contains all documentation for the project
+- `public` - contains files that should be served statially from Next.js
+- `src/app` - contains all code that goes in the *app router*
 
 # Team
 
