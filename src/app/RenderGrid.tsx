@@ -43,18 +43,19 @@ export default function RenderGrid({ gridSize, board, reveal, flag, }: RenderGri
           {/* row cells */}
           {row.map((cell, c) => (
             <div
-              key={`${r}-${c}`}
-              onClick={() => reveal(r, c)}
-              onContextMenu={(e) => flag(e, r, c)}
-              className="flex items-center justify-center select-none cursor-pointer aspect-square font-bold border border-gray-300"
-              style={{
-                background: cell.revealed ? "black" : "white",
-              }}
-            >
-              {cell.revealed
-                ? (cell.isMine && <BombIcon color="red" />) || (cell.adjacent > 0 && cell.adjacent)
-                : (cell.flagged && <FlagIcon color="var(--color-sky-700)" />)}
-            </div>
+            key={`${r}-${c}`}
+            onClick={() => reveal(r, c)}
+            onContextMenu={(e) => flag(e, r, c)}
+            className="flex items-center justify-center select-none cursor-pointer aspect-square font-bold border border-gray-300"
+            style={{
+              background: cell.revealed ? "black" : "white",
+              color: cell.revealed ? "white" : "inherit", // <— add this
+            }}
+          >
+            {cell.revealed
+              ? (cell.isMine && <BombIcon color="red" />) || (cell.adjacent > 0 && cell.adjacent)
+              : (cell.flagged && <FlagIcon color="var(--color-sky-700)" />)}
+          </div>
           ))}
         </React.Fragment>
       ))}
