@@ -24,7 +24,7 @@ export default function RenderGrid({ gridSize, board, reveal, flag, }: RenderGri
       <div data-empty-div />
 
       {charArr.map((c) => (
-        <div key={c} className="text-center font-bold aspect-square flex items-center justify-center">
+        <div key={c} className="text-center aspect-square flex items-center justify-center">
           {c}
         </div>
       ))}
@@ -35,7 +35,7 @@ export default function RenderGrid({ gridSize, board, reveal, flag, }: RenderGri
           {/* row header (1–10) */}
           <div
             key={`row-${r}-h`}
-            className="text-center font-bold aspect-square flex items-center justify-center"
+            className="text-center aspect-square flex items-center justify-center"
           >
             {r + 1}
           </div>
@@ -46,7 +46,7 @@ export default function RenderGrid({ gridSize, board, reveal, flag, }: RenderGri
             key={`${r}-${c}`}
             onClick={() => reveal(r, c)}
             onContextMenu={(e) => flag(e, r, c)}
-            className="flex items-center justify-center select-none cursor-pointer aspect-square font-bold border border-gray-300"
+            className="flex items-center justify-center select-none cursor-pointer aspect-square border border-gray-300"
             style={{
               background: cell.revealed ? "black" : "white",
               color: cell.revealed ? "white" : "inherit", // <— add this

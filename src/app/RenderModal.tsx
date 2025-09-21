@@ -1,10 +1,3 @@
-import { Bitcount } from "next/font/google";
-
-const bitCount = Bitcount({
-  weight: '400',
-  subsets: ['latin'],
-})
-
 interface RenderModalProps {
   state: string | null;
   close: () => void;
@@ -23,7 +16,6 @@ export default function RenderModal({ state, close }: RenderModalProps) {
           className="text-4xl"
           style={{
             color: state === "won" ? "var(--color-green-500)" : "var(--color-red-800)",
-            ...bitCount.style,
           }}
         >
           You {state || ""}!
