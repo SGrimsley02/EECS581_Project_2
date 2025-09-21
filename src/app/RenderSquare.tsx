@@ -1,8 +1,9 @@
 import { Bomb } from "lucide-react";
+import { Cell } from "@/_util/grid";
 import { useState } from "react";
 
 interface RenderSquareProps {
-  cell: CellObject;
+  cell: Cell;
 };
 
 export default function RenderSquare({ cell }:RenderSquareProps) {
@@ -14,7 +15,7 @@ export default function RenderSquare({ cell }:RenderSquareProps) {
       onClick={() => setIsCovered(false)}
       className={`flex place-content-center aspect-square border b-white hover:opacity-70 ${isCovered ? 'bg-white' : 'bg-none'}`}
     >
-      {cell.hasBomb && <Bomb color="white" />}
+      {cell.isMine && <Bomb color="white" />}
     </div>
   );
 }
