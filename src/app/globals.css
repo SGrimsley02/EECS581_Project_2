@@ -1,15 +1,47 @@
+/*
+ * File: src/app/globals.css
+ * Module: Styling – Global (Tailwind layer + theme tokens)
+ * Brief: Defines base color tokens (background/foreground), light/dark mode variants,
+ *        and applies global text/background colors. Imports Tailwind for utility classes.
+ *
+ * Inputs:
+ *   - CSS variables on :root: --background, --foreground
+ *   - User OS preference: prefers-color-scheme (light/dark)
+ *   - Tailwind utilities (via @import "tailwindcss")
+ *
+ * Outputs:
+ *   - Theme tokens usable in Tailwind via @theme inline (e.g., --color-background)
+ *   - Global <body> background/text color styles
+ *
+ * External Sources / Attribution:
+ *   - Tailwind CSS framework (utility classes and @theme inline). See: https://tailwindcss.com/
+ *   - Otherwise: None;
+ *
+ * EECS 581 – Project 1 Compliance Notes:
+ *   - Provides consistent visual foundation for Minesweeper UI (grid, counters, status).
+ *   - Accessible dark/light contrast via CSS variables and media query.
+ *
+
+ * Creation Date: 2025-09-16
+ * Course: EECS 581 (Software Engineering II), Prof. Hossein Saiedian – Fall 2025
+ */
+
+/* [Sourced] Tailwind CSS utilities import (framework stylesheet). */
 @import "tailwindcss";
 
+/* [Original] Base theme tokens in light mode. */
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
+/* [Original] Expose tokens to Tailwind's design system using @theme inline. */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 }
 
+/* [Original] Dark mode overrides driven by OS preference. */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -17,6 +49,7 @@
   }
 }
 
+/* [Original] Apply global colors to the document body. */
 body {
   background: var(--background);
   color: var(--foreground);
