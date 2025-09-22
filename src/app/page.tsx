@@ -1,10 +1,48 @@
+/**
+ * File: src/app/page.tsx
+ * Module: User Interface – Minesweeper Page (Client Component)
+ * Brief: Renders the Minesweeper screen (controls, counters, 10×10 grid, modal) and
+ *        wires user interactions to game-logic utilities (board creation, mine placement,
+ *        adjacency computation, flood-fill reveal, and win/loss detection).
+ *
+ * Inputs:
+ *   - User interactions:
+ *       • Number input (mines: 10–20) to set difficulty
+ *       • Reset button to start a new game
+ *       • Grid actions from <RenderGrid/>: left-click (reveal), right-click (flag)
+ *   - Child components:
+ *       • <RenderGrid/> props: { board, gridSize, reveal, flag }
+ *       • <RenderModal/> props: { state: 'won'|'lost', close: () => void }
+ *
+ * Outputs:
+ *   - UI: controls bar (timer, flags remaining), 10×10 grid with labels, win/loss modal
+ *   - State transitions reflected visually (revealed cells, flags, status)
+ *
+ * Side Effects:
+ *   - Starts/stops an interval timer while the game is active
+ *   - Resets game state when mines count changes or when user clicks Reset
+ *
+ * External Sources / Attribution:
+ *   - None;
+ *
+ * EECS 581 – Project 1 Compliance Notes:
+ *   - Grid: fixed 10×10; mines: user-selected 10–20; random placement
+ *   - First click guaranteed safe (mines placed excluding the first-click cell)
+ *   - Flagged cells cannot be uncovered; flags remaining = mines − placed flags
+ *   - Reveal numbers 0–8; zero triggers recursive flood-reveal
+ *   - Status shown via modal (“won”/“lost”); Reset supported
+ *
+ 
+ * Creation Date: 2025-09-09
+ * Course: EECS 581 (Software Engineering II), Prof. Hossein Saiedian – Fall 2025
+ */
+
 'use client'
 
 import type { Cell } from "@/_util/grid"
 
 import React, { useEffect, useState } from 'react';
 import { FlagIcon, TimerIcon } from "lucide-react";
-
 
 import RenderModal from "./RenderModal"
 import RenderGrid from "./RenderGrid";
@@ -16,23 +54,27 @@ import {
   computeAdjacency,
 } from '@/_util/grid';
 
+// [Original] Fixed grid size per spec (10×10).
 const GRID_SIZE = 10;
 
 export default function MinesweeperPage() {
+  // [Original] Default mine count within allowed range (10–20).
   const [mines, setMines] = useState(15);
 
+  // [Original] Canonical game state.
   const [board, setBoard] = useState<Cell[][]>(() => createEmptyBoard(GRID_SIZE, GRID_SIZE));
-  const [started, setStarted] = useState(false);
-  const [gameOver, setGameOver] = useState<null | 'lost' | 'won'>(null);
-  const [flagsLeft, setFlagsLeft] = useState(mines);
-  const [seconds, setSeconds] = useState(0);
+  const [started, setStarted] = useState(false);                        // has the first reveal occurred?
+  const [gameOver, setGameOver] = useState<null | 'lost' | 'won'>(null); // terminal state marker
+  const [flagsLeft, setFlagsLeft] = useState(mines);                    // remaining flags (mines − placed)
+  const [seconds, setSeconds] = useState(0);                            // elapsed time in seconds
 
+  // [Original] If mines setting changes, start a fresh game.
   useEffect(() => {
     reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mines]);
 
-  // Update the counter
+  // [Original] Timer: run while the game has started and is not over.
   useEffect(() => {
     let t: number | undefined;
     if (started && !gameOver) {
@@ -41,16 +83,21 @@ export default function MinesweeperPage() {
     return () => { if (t) clearInterval(t); };
   }, [started, gameOver]);
 
+  // [Original] Reveal all mines (used on loss, and post-win to show final state).
   function revealMines(): void {
     setBoard(b => b.map(row => row.map(c0 => c0.isMine ? { ...c0, revealed: true } : c0)));
   }
 
+  // [Original] Win condition:
+  //  - every safe cell must be revealed
+  //  - every mined cell must remain unrevealed
   function checkWin(board: Cell[][]): boolean {
     return board.every(rw =>
       rw.every(cell => (cell.isMine ? !cell.revealed : cell.revealed))
     )
   }
 
+  // [Original] Reset overall game state to a clean slate.
   function reset() {
     setBoard(createEmptyBoard(GRID_SIZE, GRID_SIZE));
     setStarted(false);
@@ -59,14 +106,18 @@ export default function MinesweeperPage() {
     setSeconds(0);
   }
 
-
+  // [Original] Handle a left-click reveal at (r,c).
   function revealCell(r: number, c: number) {
     if (gameOver) return;
 
+    // Clone to avoid mutating React state directly.
     let newBoard = cloneBoard(board); // Clone the board not to trigger state changes
 
     if (!started) {
-      // create a brand new board, safe around first click
+      // [Original] First-click safety:
+      //  - generate a fresh board
+      //  - place mines excluding the first-click position
+      //  - compute adjacency counts once
       const freshBoard = createEmptyBoard(GRID_SIZE, GRID_SIZE);
       placeMines(freshBoard, mines, { r, c });
       computeAdjacency(freshBoard);
@@ -76,39 +127,48 @@ export default function MinesweeperPage() {
     }
 
     const cell = newBoard[r][c];
-    if (cell.revealed || cell.flagged) return;
+    if (cell.revealed || cell.flagged) return; // ignore invalid actions per rules
 
     if (cell.isMine) {
+      // Hitting a mine ends the game immediately; reveal all mines.
       setGameOver("lost");
       revealMines();
       return;
     }
 
+    // [Original] Reveal region; flood-fill handles zero-adjacent expansion.
     floodFill(newBoard, GRID_SIZE, r, c);
     setBoard(newBoard);
 
+    // Check if this reveal leads to a win state.
     if (checkWin(newBoard)) {
       setGameOver("won");
       revealMines();
     }
   }
 
-
+  // [Original] Handle right-click flag toggle at (r,c).
   function toggleFlag(e: React.MouseEvent, r: number, c: number) {
     e.preventDefault();
     if (gameOver) return;
+
     const newBoard = cloneBoard(board);
     const cell = newBoard[r][c];
-    if (cell.revealed) return;
-    if (!cell.flagged && flagsLeft === 0) return; // no flags left
+
+    if (cell.revealed) return;               // cannot flag an already revealed cell
+    if (!cell.flagged && flagsLeft === 0) return; // cannot place more flags than mines
+
+    // Toggle flag state on the cloned board.
     cell.flagged = !cell.flagged;
+
+    // [Original] Adjust flags: quick local update (kept), then recompute to avoid drift.
     setFlagsLeft(fl => fl + (cell.flagged ? -1 : 1) * -1); // adjust
-    // simpler: recalc flags
+    // [Original] Recompute remaining flags from truth to keep counters consistent.
     const remaining = mines - newBoard.flat().filter(c0 => c0.flagged).length;
     setFlagsLeft(remaining);
     setBoard(newBoard);
 
-    // check win quickly: all mines flagged and other cells revealed
+    // Optional fast-path win check (all safe revealed & all mines un-revealed).
     if (checkWin(newBoard)) {
       setGameOver("won");
       revealMines();
@@ -119,6 +179,7 @@ export default function MinesweeperPage() {
     <div 
       className="w-7/12 m-auto"
     >
+      {/* [Original] Controls: difficulty (mines), Reset, and HUD (timer + flags). */}
       <div className="flex gap-5 place-content-center mt-10">
         <label className="border-2 border-white rounded-md p-2" >Mines
           <input 
@@ -126,6 +187,7 @@ export default function MinesweeperPage() {
             value={mines} 
             min={10} 
             max={20} 
+            // [Original] Clamp user input to allowed range (10–20).
             onChange={e => setMines(Math.max(10, Math.min(20, Number(e.target.value) || 10)))} 
             className='px-2 mx-2'
           />
@@ -138,6 +200,7 @@ export default function MinesweeperPage() {
           Reset
         </button>
 
+        {/* [Original] HUD: simple timer and flags remaining. */}
         <div className="ml-auto flex gap-5 items-center border-2 border-white rounded-md p-2">
           <span className="flex items-center gap-1">
             <TimerIcon color="white"/>
@@ -150,6 +213,7 @@ export default function MinesweeperPage() {
         </div>
       </div>
 
+      {/* [Original] Grid and end-of-game modal. */}
       <div className="mt-10 relative">
         <RenderGrid
           board={board}
@@ -162,5 +226,3 @@ export default function MinesweeperPage() {
     </div>
   );
 }
-
-
