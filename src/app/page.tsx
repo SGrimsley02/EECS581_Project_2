@@ -32,7 +32,7 @@
  *   - Reveal numbers 0–8; zero triggers recursive flood-reveal
  *   - Status shown via modal (“won”/“lost”); Reset supported
  *
- 
+
  * Creation Date: 2025-09-09
  * Course: EECS 581 (Software Engineering II), Prof. Hossein Saiedian – Fall 2025
  */
@@ -113,21 +113,19 @@ export default function MinesweeperPage() {
     // Clone to avoid mutating React state directly.
     let newBoard = cloneBoard(board); // Clone the board not to trigger state changes
 
+    // Check flag before first click safety logic.
+    const cell = newBoard[r][c];
+    if (cell.revealed || cell.flagged) return; // ignore invalid actions per rules
+
     if (!started) {
       // [Original] First-click safety:
-      //  - generate a fresh board
       //  - place mines excluding the first-click position
       //  - compute adjacency counts once
-      const freshBoard = createEmptyBoard(GRID_SIZE, GRID_SIZE);
-      placeMines(freshBoard, mines, { r, c });
-      computeAdjacency(freshBoard);
-      newBoard = cloneBoard(freshBoard);
+      placeMines(newBoard, mines, { r, c });
+      computeAdjacency(newBoard);
       setBoard(newBoard);
       setStarted(true);
     }
-
-    const cell = newBoard[r][c];
-    if (cell.revealed || cell.flagged) return; // ignore invalid actions per rules
 
     if (cell.isMine) {
       // Hitting a mine ends the game immediately; reveal all mines.
@@ -156,13 +154,10 @@ export default function MinesweeperPage() {
     const cell = newBoard[r][c];
 
     if (cell.revealed) return;               // cannot flag an already revealed cell
-    if (!cell.flagged && flagsLeft === 0) return; // cannot place more flags than mines
 
     // Toggle flag state on the cloned board.
     cell.flagged = !cell.flagged;
 
-    // [Original] Adjust flags: quick local update (kept), then recompute to avoid drift.
-    setFlagsLeft(fl => fl + (cell.flagged ? -1 : 1) * -1); // adjust
     // [Original] Recompute remaining flags from truth to keep counters consistent.
     const remaining = mines - newBoard.flat().filter(c0 => c0.flagged).length;
     setFlagsLeft(remaining);
@@ -176,24 +171,24 @@ export default function MinesweeperPage() {
   }
 
   return (
-    <div 
+    <div
       className="w-7/12 m-auto"
     >
       {/* [Original] Controls: difficulty (mines), Reset, and HUD (timer + flags). */}
       <div className="flex gap-5 place-content-center mt-10">
         <label className="border-2 border-white rounded-md p-2" >Mines
-          <input 
+          <input
             type="number"
-            value={mines} 
-            min={10} 
-            max={20} 
+            value={mines}
+            min={10}
+            max={20}
             // [Original] Clamp user input to allowed range (10–20).
-            onChange={e => setMines(Math.max(10, Math.min(20, Number(e.target.value) || 10)))} 
+            onChange={e => setMines(Math.max(10, Math.min(20, Number(e.target.value) || 10)))}
             className='px-2 mx-2'
           />
         </label>
 
-        <button 
+        <button
           onClick={reset}
           className='cursor-pointer border-2 border-white rounded-md p-2 text-white hover:opacity-70'
         >
