@@ -98,11 +98,24 @@ export default function MinesweeperPage() {
   useEffect(() => {
     if ((aiMode === 'automatic' || (aiMode === 'interactive' && !isUserTurn)) && !gameOver) {
       const aiMoveInterval = setInterval(() => {
+          // Build context object from current React state
+        const ctx = {
+          board,
+          gridSize: GRID_SIZE,
+          mines,
+          started,
+          setBoard,
+          setStarted,
+          setFlagsLeft,      // Medium uses this
+          setGameOver,
+          checkWin: (b: Cell[][]) => checkWin(b),
+          revealMines: () => revealMines(),
+        };
         // Simple AI: randomly reveal a cell that is not revealed or flagged
         if (aiDifficulty === 'easy') {
-          easyAi(); // Placeholder for easy AI logic
+          easyAi(ctx); // Placeholder for easy AI logic
         } else if (aiDifficulty === 'medium') {
-          mediumAi(); // Placeholder for medium AI logic
+          mediumAi(ctx); // Placeholder for medium AI logic
         } else {
           hardAi(); // Placeholder for hard AI logic
         }
