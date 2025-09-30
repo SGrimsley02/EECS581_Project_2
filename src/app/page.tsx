@@ -164,7 +164,7 @@ export default function MinesweeperPage() {
     if (gameOver) return;
 
     // Clone to avoid mutating React state directly.
-    let newBoard = cloneBoard(board); // Clone the board not to trigger state changes
+    const newBoard = cloneBoard(board); // Clone the board not to trigger state changes
 
     // Check flag before first click safety logic.
     const cell = newBoard[r][c];
