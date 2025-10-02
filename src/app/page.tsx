@@ -54,12 +54,26 @@ import {
   computeAdjacency,
 } from '@/_util/grid';
 
+import {
+  easyAi,
+  mediumAi,
+  hardAi
+} from './somewhere'; // Placeholder for AI strategies
+
 // [Original] Fixed grid size per spec (10×10).
 const GRID_SIZE = 10;
 
 export default function MinesweeperPage() {
   // [Original] Default mine count within allowed range (10–20).
   const [mines, setMines] = useState(15);
+
+  // New state for game mode: 'interactive' or 'automatic'
+  const [aiMode, setAiMode] = useState<'interactive' | 'automatic' | 'off'>('off');
+  // Additional state for interactive mode tracking if it's user or AI's turn
+  const [isUserTurn, setIsUserTurn] = useState(true);
+
+  // AI Difficulty Level
+  const [aiDifficulty, setAiDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
 
   // [Original] Canonical game state.
   const [board, setBoard] = useState<Cell[][]>(() => createEmptyBoard(GRID_SIZE, GRID_SIZE));
@@ -73,6 +87,32 @@ export default function MinesweeperPage() {
     reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mines]);
+
+  // If mode or ai difficulty changes, reset the game and set turn to user
+  useEffect(() => {
+    reset();
+    setIsUserTurn(true);
+  }, [aiMode, aiDifficulty]);
+
+  // AI Moves
+  useEffect(() => {
+    if ((aiMode === 'automatic' || (aiMode === 'interactive' && !isUserTurn)) && !gameOver) {
+      const aiMoveInterval = setInterval(() => {
+        // Simple AI: randomly reveal a cell that is not revealed or flagged
+        if (aiDifficulty === 'easy') {
+          easyAi(); // Placeholder for easy AI logic
+        } else if (aiDifficulty === 'medium') {
+          mediumAi(); // Placeholder for medium AI logic
+        } else {
+          hardAi(); // Placeholder for hard AI logic
+        }
+        if (aiMode === 'interactive') {
+          setIsUserTurn(true); // Switch back to user turn in interactive mode
+        }
+      }, 1000); // AI makes a move every second
+      return () => clearInterval(aiMoveInterval);
+    }
+  }, [aiMode, isUserTurn, board, started, gameOver]);
 
   // [Original] Timer: run while the game has started and is not over.
   useEffect(() => {
@@ -143,6 +183,11 @@ export default function MinesweeperPage() {
       setGameOver("won");
       revealMines();
     }
+
+    // If in interactive mode, switch turn to AI after user's move
+    if (aiMode === 'interactive') {
+      setIsUserTurn(false);
+    }
   }
 
   // [Original] Handle right-click flag toggle at (r,c).
@@ -174,7 +219,7 @@ export default function MinesweeperPage() {
     <div
       className="w-7/12 m-auto"
     >
-      {/* [Original] Controls: difficulty (mines), Reset, and HUD (timer + flags). */}
+      {/* [Original] Controls: difficulty (mines), AI, Reset, and HUD (timer +flags). */}
       <div className="flex gap-5 place-content-center mt-10">
         <label className="border-2 border-white rounded-md p-2" >Mines
           <input
@@ -194,6 +239,34 @@ export default function MinesweeperPage() {
         >
           Reset
         </button>
+
+        {/* Interactive vs Automatic Mode Toggle */}
+        <div className="flex items-center">
+          <label className="mr-2">Mode:</label>
+          <select
+            value={aiMode}
+            onChange={e => setAiMode(e.target.value as 'interactive' | 'automatic' | 'off')}
+            className="border-2 border-white rounded-md p-2 bg-black text-white"
+          >
+            <option value="off">Off</option>
+            <option value="interactive">Interactive</option>
+            <option value="automatic">Automatic</option>
+          </select>
+        </div>
+
+        {/* AI Difficulty Selection, for all AI modes */}
+        <div className="flex items-center">
+          <label className="mr-2">AI Difficulty:</label>
+          <select
+            value={aiDifficulty}
+            onChange={e => setAiDifficulty(e.target.value as 'easy' | 'medium' | 'hard')}
+            className="border-2 border-white rounded-md p-2 bg-black text-white"
+          >
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
 
         {/* [Original] HUD: simple timer and flags remaining. */}
         <div className="ml-auto flex gap-5 items-center border-2 border-white rounded-md p-2">
