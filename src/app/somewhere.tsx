@@ -37,7 +37,7 @@ export function easyAi(ctx?: Ctx) {
     setBoard, setStarted, setGameOver,
     checkWin, revealMines
   } = ctx;
-
+  if (checkWin(board)) return;
   const next = cloneBoard(board);
 
   // Collect all cells that are still hidden and not flagged.
