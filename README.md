@@ -42,3 +42,11 @@ Our team members are:
 - Shero Baig
 - Omar Mohammed
 
+Maintainers:
+- Kiara [Sam] Grimsley
+- Reeny Huang
+- Lauren D'Souza
+- Ella Nguyen
+- Audrey Pan
+- Hart Nurnberg
+
