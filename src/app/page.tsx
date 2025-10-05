@@ -88,8 +88,9 @@ export default function MinesweeperPage() {
   // AI Difficulty Level
   const [aiDifficulty, setAiDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
 
-  // Track hint used.
+  // Track hint used and available.
   const [hintsUsed, setHintsUsed] = useState(0);
+  const [hintsAvailable, setHintsAvailable] = useState(true);
 
   // [Original] Canonical game state.
   const [board, setBoard] = useState<Cell[][]>(() => createEmptyBoard(GRID_SIZE, GRID_SIZE));
@@ -161,7 +162,7 @@ export default function MinesweeperPage() {
   // Hint feature handler
   function useHint() {
     // If game is over or hints are exhausted
-    if (gameOver || hintsUsed >= 3) {
+    if (gameOver || hintsUsed >= 3 || !hintsAvailable) {
       return; // Do not use hint
     }
     const ctx = {
@@ -176,9 +177,13 @@ export default function MinesweeperPage() {
       checkWin: (b: Cell[][]) => checkWin(b),
       revealMines: () => revealMines(),
     };
-    hint(ctx); // Call the hint function from AiBehavior
-    setHintsUsed(hintsUsed + 1); // Increment hints used
+    let result = hint(ctx); // Call the hint function from AiBehavior
+    if (result === 'none') {
+      setHintsAvailable(false); // No more hints can be used
+    } else {
+      setHintsUsed(hintsUsed + 1); // Increment hints used
     }
+  }
 
   // [Original] Win condition:
   //  - every safe cell must be revealed
@@ -209,6 +214,7 @@ export default function MinesweeperPage() {
 
     // Check flag before first click safety logic.
     const cell = newBoard[r][c];
+    setHintsAvailable(true); // Assume hints are available at the start of the click
     if (cell.revealed || cell.flagged) return; // ignore invalid actions per rules
 
     if (!started) {
@@ -256,6 +262,7 @@ export default function MinesweeperPage() {
 
     // Toggle flag state on the cloned board.
     cell.flagged = !cell.flagged;
+    setHintsAvailable(true); 
 
     // [Original] Recompute remaining flags from truth to keep counters consistent.
     const remaining = mines - newBoard.flat().filter(c0 => c0.flagged).length;
@@ -344,13 +351,18 @@ export default function MinesweeperPage() {
           <span>Hints:</span>
           <button
             onClick={useHint}
-            disabled={gameOver !== null || hintsUsed >= 3}
+            disabled={gameOver !== null || hintsUsed >= 3 || !hintsAvailable}
             className={`border-2 rounded-md px-3 py-1 ${
-              hintsUsed >= 3 || gameOver
+              hintsUsed >= 3 || gameOver || !hintsAvailable
                 ? 'opacity-50 cursor-not-allowed border-gray-400 text-gray-300'
                 : 'cursor-pointer hover:opacity-80 border-white text-white'
             }`}
-            title={hintsUsed >= 3 ? 'No hints left' : 'Reveal a safe cell'}
+            title={
+              !hintsAvailable
+              ? "No safe moves available"
+              : hintsUsed >= 3
+              ? 'No hints left' 
+              : 'Reveal a safe cell'}
           >
             Use Hint
           </button>

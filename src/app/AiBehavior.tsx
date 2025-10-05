@@ -353,10 +353,13 @@ export function resetHints() {
 
 /**
  * Hint feature:
- * - Analyzes the current board state and suggests a safe move (open or flag).
- * - reveaks a safe random cell (3 times max)
+ * - Analyzes the current board state and plays a safe move (open or flag).
+ * - Reveals a safe random cell (3 times max)
+ * - Good: hint available
+ * - Done: no hints left or game already won
+ * - None: no safe moves available
  */
-export function hint(ctx?: Ctx) {
+export function hint(ctx?: Ctx): "good" | "done" | "none" | void {
   if (!ctx) { 
     console.warn("hint called without ctx"); 
     return; 
@@ -365,7 +368,7 @@ export function hint(ctx?: Ctx) {
   // Check if hints are exhausted
   if (hintUses >= MAX_HINTS) {
     console.log("No hints remaining");
-    return;
+    return "done";
   }
   const {
     board, gridSize, mines, started,
@@ -376,7 +379,7 @@ export function hint(ctx?: Ctx) {
   // If game already won, no hints needed
   if (checkWin(board)) {
     console.log("Game already won, no hints needed");
-    return;
+    return "done";
   }
   // Collect all cells that are still hidden and not flagged.
   const next = cloneBoard(board);
@@ -391,7 +394,7 @@ export function hint(ctx?: Ctx) {
   }
   if (candidates.length === 0) {
     console.log("No hidden cells left for hint");
-    return;
+    return "none";
   }
   
   // First click special case: place mines *after* choosing this cell
@@ -405,13 +408,13 @@ export function hint(ctx?: Ctx) {
     setBoard(next);
     hintUses++;
     console.log(`Hint #${hintUses}: revealed (${r},${c})`);
-    return;
+    return "good";
   }
   // Filter out candidates that are mines
   const safe: Array<[number, number]> = candidates.filter(([r, c]) => !next[r][c].isMine);
   if (safe.length === 0) {
     console.log("No safe cells available for hint");
-    return;
+    return "none";
   }
 
   // Pick a random safe cell to reveal if game started
