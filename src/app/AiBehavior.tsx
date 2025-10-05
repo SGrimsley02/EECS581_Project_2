@@ -1,3 +1,14 @@
+/**
+ * Module: AI behavior
+ * Description: Defines the AI behavior for the Minesweeper game, including easy, medium, and hard difficulty levels.
+ *              In addition, it provides a hint feature to assist players.
+ * Inputs: Width, height, and number of mines defining the initial board setup.
+ * Outputs: Returns AI move functions (easyAi, mediumAi, hardAi) and hint feature.
+ * External Sources: None.
+ * Authors: Kiara [Sam] Grimsley, Reeny Huang, Lauren D'Souza, Audrey Pan, Ella Nguyen, Hart Nurnberg
+ * Last modified: October 5, 2025
+ */
+
 import type { Cell } from "@/_util/grid";
 import {
   cloneBoard,
@@ -18,6 +29,9 @@ type Ctx = {
   checkWin: (b: Cell[][]) => boolean;
   revealMines: () => void;
 };
+
+let hintUses = 0;
+const MAX_HINTS = 3;
 
 /**
  * Easy AI (one move):
@@ -330,4 +344,89 @@ export function mediumAi(ctx?: Ctx) {
 export function hardAi(ctx?: Ctx) {
     // Placeholder for hard AI logic
     console.log("Hard AI makes a move");
+}
+
+// resetHints() is called to reset the the hint count
+export function resetHints() {
+  hintUses = 0;
+}
+
+/**
+ * Hint feature:
+ * - Analyzes the current board state and suggests a safe move (open or flag).
+ * - reveaks a safe random cell (3 times max)
+ */
+export function hint(ctx?: Ctx) {
+  if (!ctx) { 
+    console.warn("hint called without ctx"); 
+    return; 
+  }
+
+  // Check if hints are exhausted
+  if (hintUses >= MAX_HINTS) {
+    console.log("No hints remaining");
+    return;
+  }
+  const {
+    board, gridSize, mines, started,
+    setBoard, setStarted, setGameOver,
+    checkWin, revealMines
+  } = ctx;
+
+  // If game already won, no hints needed
+  if (checkWin(board)) {
+    console.log("Game already won, no hints needed");
+    return;
+  }
+  // Collect all cells that are still hidden and not flagged.
+  const next = cloneBoard(board);
+  const candidates: Array<[number, number]> = [];
+  for (let r = 0; r < gridSize; r++) {
+    for (let c = 0; c < gridSize; c++) {
+      const cell = next[r][c];
+      if (!cell.revealed && !cell.flagged) {
+        candidates.push([r, c]);
+      }
+    }
+  }
+  if (candidates.length === 0) {
+    console.log("No hidden cells left for hint");
+    return;
+  }
+  
+  // First click special case: place mines *after* choosing this cell
+  if (!started) {
+    const [r, c] = candidates[Math.floor(Math.random() * candidates.length)];
+    placeMines(next, mines, { r, c });
+    computeAdjacency(next);
+    setStarted(true);
+
+    floodFill(next, gridSize, r, c);
+    setBoard(next);
+    hintUses++;
+    console.log(`Hint #${hintUses}: revealed (${r},${c})`);
+    return;
+  }
+  // Filter out candidates that are mines
+  const safe: Array<[number, number]> = candidates.filter(([r, c]) => !next[r][c].isMine);
+  if (safe.length === 0) {
+    console.log("No safe cells available for hint");
+    return;
+  }
+
+  // Pick a random safe cell to reveal if game started
+  const [rr, cc] = safe[Math.floor(Math.random() * safe.length)];
+  floodFill(next, gridSize, rr, cc);
+  setBoard(next);
+  hintUses++;
+  console.log(`Hint #${hintUses}: revealed (${rr},${cc})`);
+
+  // After the hint, check if this wins the game.
+  // If so, mark game as won, reset hints, and reveal mines.
+  if (checkWin(next)) {
+    setGameOver("won");
+    revealMines();
+    resetHints();
+    console.log("Game won after hint!");
+  }
 }
