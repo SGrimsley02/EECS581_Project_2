@@ -117,7 +117,7 @@ export default function MinesweeperPage() {
         } else if (aiDifficulty === 'medium') {
           mediumAi(ctx); // Placeholder for medium AI logic
         } else {
-          hardAi(); // Placeholder for hard AI logic
+          hardAi(ctx); // Placeholder for hard AI logic
         }
         if (aiMode === 'interactive') {
           setIsUserTurn(true); // Switch back to user turn in interactive mode
