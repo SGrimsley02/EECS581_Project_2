@@ -35,7 +35,7 @@
 
  * Creation Date: 2025-09-09
  * Course: EECS 581 (Software Engineering II), Prof. Hossein Saiedian – Fall 2025
- * 
+ *
  * Last Modified: 2025-10-5
  *  - Added AI opponent with 'interactive' and 'automatic' modes.
  *    - In 'interactive' mode, user and AI alternate turns.
@@ -77,6 +77,8 @@ const GRID_SIZE = 10;
 export default function MinesweeperPage() {
   // [Original] Default mine count within allowed range (10–20).
   const [mines, setMines] = useState(15);
+  // Input field state to fix typing mine values
+  const [inputValue, setInputValue] = useState(mines.toString());
 
   // New state for game mode: 'interactive' or 'automatic'
   const [aiMode, setAiMode] = useState<'interactive' | 'automatic' | 'off'>('off');
@@ -99,6 +101,7 @@ export default function MinesweeperPage() {
   // [Original] If mines setting changes, start a fresh game.
   useEffect(() => {
     reset();
+    setInputValue(mines.toString());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mines]);
 
@@ -275,11 +278,28 @@ export default function MinesweeperPage() {
         <label className="border-2 border-white rounded-md p-2" >Mines
           <input
             type="number"
-            value={mines}
+            value={inputValue}
             min={10}
             max={20}
-            // [Original] Clamp user input to allowed range (10–20).
-            onChange={e => setMines(Math.max(10, Math.min(20, Number(e.target.value) || 10)))}
+            // Call setMines immediately when the user types a valid integer in range
+            onChange={e => {
+              const v = e.target.value;
+              setInputValue(v);
+              const n = Number(v);
+              // Commit immediately only for integer values inside allowed range
+              if (!Number.isNaN(n) && Number.isInteger(n) && n >= 10 && n <= 20) {
+                setMines(n);
+              }
+            }}
+            onBlur={() => { // Mine count will only change when leaving the field (fallback/clamp)
+              const n = Number(inputValue);
+              if (!isNaN(n)) {
+                setMines(Math.max(10, Math.min(20, n))); // Clamp when user leaves field
+                setInputValue(Math.max(10, Math.min(20, n)).toString());
+              } else {
+                setInputValue(mines.toString()); // Reset if invalid
+              }
+            }}
             className='px-2 mx-2'
           />
         </label>
