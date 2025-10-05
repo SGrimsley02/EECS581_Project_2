@@ -262,6 +262,7 @@ export default function MinesweeperPage() {
 
     // Toggle flag state on the cloned board.
     cell.flagged = !cell.flagged;
+    setHintsAvailable(true); 
 
     // [Original] Recompute remaining flags from truth to keep counters consistent.
     const remaining = mines - newBoard.flat().filter(c0 => c0.flagged).length;
