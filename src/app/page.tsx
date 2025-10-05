@@ -35,6 +35,15 @@
 
  * Creation Date: 2025-09-09
  * Course: EECS 581 (Software Engineering II), Prof. Hossein Saiedian – Fall 2025
+ * 
+ * Last Modified: 2025-10-5
+ *  - Added AI opponent with 'interactive' and 'automatic' modes.
+ *    - In 'interactive' mode, user and AI alternate turns.
+ *    - In 'automatic' mode, AI plays continuously.
+ *    - AI difficulty levels: 'easy', 'medium', 'hard' (placeholders for now).
+ *  - Added hint feature (max 3 uses) to suggest a safe move.
+ *  - Authors: Kiara [Sam] Grimsley, Reeny Huang, Audrey Pan, Ella Nguyen, Hart Nurnberg
+ *  - External Sources: None
  */
 
 'use client'
@@ -57,8 +66,10 @@ import {
 import {
   easyAi,
   mediumAi,
-  hardAi
-} from './somewhere'; // Placeholder for AI strategies
+  hardAi,
+  hint,
+  resetHints,
+} from './AiBehavior'; // Placeholder for AI strategies
 
 // [Original] Fixed grid size per spec (10×10).
 const GRID_SIZE = 10;
@@ -74,6 +85,9 @@ export default function MinesweeperPage() {
 
   // AI Difficulty Level
   const [aiDifficulty, setAiDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
+
+  // Track hint used.
+  const [hintsUsed, setHintsUsed] = useState(0);
 
   // [Original] Canonical game state.
   const [board, setBoard] = useState<Cell[][]>(() => createEmptyBoard(GRID_SIZE, GRID_SIZE));
@@ -141,6 +155,28 @@ export default function MinesweeperPage() {
     setBoard(b => b.map(row => row.map(c0 => c0.isMine ? { ...c0, revealed: true } : c0)));
   }
 
+  // Hint feature handler
+  function useHint() {
+    // If game is over or hints are exhausted
+    if (gameOver || hintsUsed >= 3) {
+      return; // Do not use hint
+    }
+    const ctx = {
+      board,
+      gridSize: GRID_SIZE,
+      mines,
+      started,
+      setBoard,
+      setStarted,
+      setFlagsLeft,
+      setGameOver,
+      checkWin: (b: Cell[][]) => checkWin(b),
+      revealMines: () => revealMines(),
+    };
+    hint(ctx); // Call the hint function from AiBehavior
+    setHintsUsed(hintsUsed + 1); // Increment hints used
+    }
+
   // [Original] Win condition:
   //  - every safe cell must be revealed
   //  - every mined cell must remain unrevealed
@@ -157,6 +193,8 @@ export default function MinesweeperPage() {
     setGameOver(null);
     setFlagsLeft(mines);
     setSeconds(0);
+    resetHints();
+    setHintsUsed(0);
   }
 
   // [Original] Handle a left-click reveal at (r,c).
@@ -281,6 +319,26 @@ export default function MinesweeperPage() {
           </select>
         </div>
 
+        {/* Hint Button */}
+        <div className="flex items-center gap-2 border-2 border-white rounded-md p-2">
+          <span>Hints:</span>
+          <button
+            onClick={useHint}
+            disabled={gameOver !== null || hintsUsed >= 3}
+            className={`border-2 rounded-md px-3 py-1 ${
+              hintsUsed >= 3 || gameOver
+                ? 'opacity-50 cursor-not-allowed border-gray-400 text-gray-300'
+                : 'cursor-pointer hover:opacity-80 border-white text-white'
+            }`}
+            title={hintsUsed >= 3 ? 'No hints left' : 'Reveal a safe cell'}
+          >
+            Use Hint
+          </button>
+          <span className="text-sm opacity-80">
+            {3 - hintsUsed} left
+          </span>
+        </div>
+
         {/* [Original] HUD: simple timer and flags remaining. */}
         <div className="ml-auto flex gap-5 items-center border-2 border-white rounded-md p-2">
           <span className="flex items-center gap-1">
@@ -307,3 +365,4 @@ export default function MinesweeperPage() {
     </div>
   );
 }
+
