@@ -16,10 +16,11 @@
  *
  * Outputs:
  *   - UI: controls bar (timer, flags remaining), 10×10 grid with labels, win/loss modal
- *   - State transitions reflected visually (revealed cells, flags, status)
+ *   - State transitions reflected visually (revealed cells, flags, status, timer)
  *
  * Side Effects:
- *   - Starts/stops an interval timer while the game is active
+ *   - Starts/stops a 1s interval timer while the game is active
+ *   - Starts/stops a 1s AI interval when AI mode is 'automatic' or AI turn in 'interactive'
  *   - Resets game state when mines count changes or when user clicks Reset
  *
  * External Sources / Attribution:
@@ -112,7 +113,15 @@ export default function MinesweeperPage() {
     setIsUserTurn(true);
   }, [aiMode, aiDifficulty]);
 
-  // AI Moves
+
+/**
+ * AI Player Turn:
+ * - Runs AI moves depending on mode.
+ *   • automatic → plays continuously until game ends.
+ *   • interactive → plays only on its turn, alternating with human.
+ * - Builds ctx from current board/state and calls selected AI (easy/medium/hard).
+ * - In interactive mode, hands turn back to human after each AI move.
+ */
   useEffect(() => {
     if ((aiMode === 'automatic' || (aiMode === 'interactive' && !isUserTurn)) && !gameOver) {
       const aiMoveInterval = setInterval(() => {
@@ -159,7 +168,13 @@ export default function MinesweeperPage() {
     setBoard(b => b.map(row => row.map(c0 => c0.isMine ? { ...c0, revealed: true } : c0)));
   }
 
-  // Hint feature handler
+/**
+ * Hint Feature:
+ * - Lets player request a safe move suggestion (max 3 per game).
+ * - Builds ctx with current board/state and calls `hint()`.
+ * - Marks hints as unavailable if none remain.
+ * - Tracks how many hints have been used.
+ */
   function useHint() {
     // If game is over or hints are exhausted
     if (gameOver || hintsUsed >= 3 || !hintsAvailable) {

@@ -73,6 +73,8 @@ export function createEmptyBoard(rows: number, cols: number): Cell[][] {
  * Notes:
  *   - Ensures uniqueness (no duplicate placement).
  *   - Exclusion: any (r,c) where |r-exclude.r| ≤ 1 and |c-exclude.c| ≤ 1.
+ *   - Loop continues until requested mine count is placed; guaranteed to terminate
+ *     for the project’s 10×10 board with 10–20 mines.
  */
 export function placeMines(board: Cell[][], mines: number, exclude: { r: number; c: number }) {
   const rows = board.length;

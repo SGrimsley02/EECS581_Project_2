@@ -1,11 +1,13 @@
 /**
+ * File: src/app/AiBehavior.tsx
  * Module: AI behavior
  * Description: Defines the AI behavior for the Minesweeper game, including easy, medium, and hard difficulty levels.
  *              In addition, it provides a hint feature to assist players.
- * Inputs: Width, height, and number of mines defining the initial board setup.
+ * Inputs: Each function consumes a Ctx (current board state + setters).
  * Outputs: Returns AI move functions (easyAi, mediumAi, hardAi) and hint feature.
  * External Sources: None.
  * Authors: Kiara [Sam] Grimsley, Reeny Huang, Lauren D'Souza, Audrey Pan, Ella Nguyen, Hart Nurnberg
+ * Creation date: September 28th, 2025 
  * Last modified: October 5, 2025
  */
 
@@ -17,6 +19,7 @@ import {
   computeAdjacency,
 } from "@/_util/grid";
 
+// Ctx: view of current game state + mutators passed to AI/hint routines.
 type Ctx = {
   board: Cell[][];
   gridSize: number;
@@ -36,9 +39,9 @@ const MAX_HINTS = 3;
 /**
  * Easy AI (one move):
  * - Picks a random hidden, unflagged cell and opens it.
- * - If it’s the very first move, it also triggers mine placement (first-click safety).
- * - If it hits a mine, it immediately loses.
- * - Otherwise it flood-fills like the player would.
+ * - If it’s the very first move, it also triggers mine placement (first-click safety) and computes adjacency.
+ * - If it hits a mine, it immediately loses; otherwise, flood-fills like a player reveal
+ * - Returns immediately if the board already satisfies checkWin
  */
 export function easyAi(ctx?: Ctx) {
   if (!ctx) { 
@@ -107,6 +110,9 @@ export function easyAi(ctx?: Ctx) {
 /**
  * Medium AI (one move):
  * - Tries to make a logical move first.
+ *   • Rule 1: if hidden == (number − flagged) → flag hidden neighbors.
+ *   • Rule 2: if flagged == number → open remaining hidden neighbors.
+ *   • Also opens around revealed zeros; if stuck, guesses a random hidden cell.
  * - Always reveals at least one tile on its turn (so interactive mode feels fair).
  * - If logic is stuck, it guesses. If literally only flags remain, it unflags one and opens it.
  */
@@ -346,7 +352,7 @@ export function hardAi(ctx?: Ctx) {
     console.log("Hard AI makes a move");
 }
 
-// resetHints() is called to reset the the hint count
+// resetHints() is called to reset the the hint count back to zero
 export function resetHints() {
   hintUses = 0;
 }
