@@ -1009,4 +1009,3 @@ export function hardAi(ctx?: Ctx) {
     if (checkWin(next)) { setGameOver("won"); revealMines(); }
   }
 }
-
