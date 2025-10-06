@@ -360,7 +360,7 @@ export function hardAi(ctx?: Ctx) {
     for (let r = 0; r < gridSize; r++) {
       for (let c = 0; c < gridSize; c++) {
         const cell = next[r][c];
-        if (!cell.revealed && !cell.flagged) candidates.push([r, c]);
+        if (!cell.revealed && !cell.flagged && !cell.isMine) candidates.push([r, c]);
       }
     }
 
@@ -532,7 +532,7 @@ export function hardAi(ctx?: Ctx) {
   // ********************************************************
   for (const [r, c] of Array.from(toFlag, dec)) {
     const cell = next[r][c];
-    if (!cell.revealed && !cell.flagged) {
+    if (!cell.revealed && !cell.flagged && !cell.isMine) {
       cell.flagged = true;
       didFlag = true;
     }
@@ -626,7 +626,7 @@ export function hardAi(ctx?: Ctx) {
       for (let r = 0; r < gridSize; r++) {
         for (let c = 0; c < gridSize; c++) {
           const cell = next[r][c];
-          if (!cell.revealed && !cell.flagged) candidates.push([r, c]);
+          if (!cell.revealed && !cell.flagged && !cell.isMine) candidates.push([r, c]);
         }
       }
 
@@ -687,7 +687,7 @@ export function hardAi(ctx?: Ctx) {
     for (let r = 0; r < gridSize; r++) {
       for (let c = 0; c < gridSize; c++) {
         const cell = next[r][c];
-        if (!cell.revealed && !cell.flagged) candidates.push([r, c]);
+        if (!cell.revealed && !cell.flagged && !cell.isMine) candidates.push([r, c]);
       }
     }
 
