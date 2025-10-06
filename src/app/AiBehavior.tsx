@@ -813,6 +813,158 @@ export function hardAi(ctx?: Ctx) {
     }
   }
 
+
+  // ********************************************************
+  // Step 5: Quick Rule 2 pass (like medium), try to open one safe cell
+  // ********************************************************
+  if (!didOpen) {
+    const r2 = new Set<string>();
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        const cell = next[r][c];
+        if (!cell.revealed || cell.adjacent <= 0) continue;
+
+        const hidden: Array<[number, number]> = [];
+        let flagged = 0;
+        for (const dr of dirs) for (const dc of dirs) {
+          if (dr === 0 && dc === 0) continue;
+          const nr = r + dr, nc = c + dc;
+          if (nr < 0 || nr >= gridSize || nc < 0 || nc >= gridSize) continue;
+          const n = next[nr][nc];
+          if (n.flagged) flagged++;
+          if (!n.revealed && !n.flagged) hidden.push([nr, nc]);
+        }
+        if (flagged === cell.adjacent && hidden.length > 0) {
+          for (const [hr, hc] of hidden) r2.add(enc(hr, hc));
+        }
+      }
+    }
+    if (openOne(r2, "Rule 2 (post-flag)")) {
+      setBoard(next);
+      if (checkWin(next)) { setGameOver("won"); revealMines(); }
+      return;
+    }
+  }
+
+  // ********************************************************
+  // Step 6: Safe open fallback: repeat rule 2 then zero-neighborss
+  // ********************************************************
+  if (!didOpen && openOne(toOpenRule, "Rule 2")) {
+    setBoard(next);
+    if (checkWin(next)) { setGameOver("won"); revealMines(); }
+    return;
+  }
+  if (!didOpen && openOne(toOpenZero, "zero-adjacent")) {
+    setBoard(next);
+    if (checkWin(next)) { setGameOver("won"); revealMines(); }
+    return;
+  }
+
+  // ********************************************************
+  // Phase 7: Cheat fallback: open a guaranteed-safe (non-mine) unrevealed cell
+  // ********************************************************
+  if (!didOpen) {
+    // If game hasn't started, do first-click safety: pick a random candidate and place mines after picking
+    if (!started) {
+      // Collect hidden & unflagged candidates
+      const candidates: Array<[number, number]> = [];
+      for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+          const cell = next[r][c];
+          if (!cell.revealed && !cell.flagged) candidates.push([r, c]);
+        }
+      }
+
+      if (candidates.length > 0) {
+        const [rr, cc] = candidates[Math.floor(Math.random() * candidates.length)];
+        // Place mines excluding this chosen cell to guarantee safety
+        placeMines(next, mines, { r: rr, c: cc });
+        computeAdjacency(next);
+        setStarted(true);
+
+        const target = next[rr][cc];
+        if (target.isMine) {
+          // Very unlikely: if mines placement misbehaved
+          target.revealed = true;
+          setBoard(next);
+          setGameOver("lost");
+          revealMines();
+          console.log(`Hard AI (cheat-first) unexpectedly hit mine at (${rr},${cc})`);
+          return;
+        }
+
+        floodFill(next, gridSize, rr, cc);
+        didOpen = true;
+        setBoard(next);
+        if (checkWin(next)) { setGameOver("won"); revealMines(); }
+        console.log(`Hard AI (cheat-first) opened safe (${rr},${cc})`);
+        return;
+      }
+    } else {
+      // Game started and mines placed: find any unrevealed, unflagged cell that is non-mine
+      const safeCandidates: Array<[number, number]> = [];
+      for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+          const cell = next[r][c];
+          if (!cell.revealed && !cell.flagged && cell.isMine === false) {
+            safeCandidates.push([r, c]);
+          }
+        }
+      }
+
+      if (safeCandidates.length > 0) {
+        const [rr, cc] = safeCandidates[Math.floor(Math.random() * safeCandidates.length)];
+        floodFill(next, gridSize, rr, cc);
+        didOpen = true;
+        setBoard(next);
+        if (checkWin(next)) { setGameOver("won"); revealMines(); }
+        console.log(`Hard AI (cheat) opened known-safe (${rr},${cc})`);
+        return;
+      }
+    }
+  }
+
+  // ********************************************************
+  // Step 8: If still stuck, fall back to medium's guessing behavior (should be rare)
+  // ********************************************************
+  if (!didOpen) {
+    const candidates: Array<[number, number]> = [];
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        const cell = next[r][c];
+        if (!cell.revealed && !cell.flagged) candidates.push([r, c]);
+      }
+    }
+
+    if (candidates.length > 0) {
+      const [rr, cc] = candidates[Math.floor(Math.random() * candidates.length)];
+      console.log(`Hard AI fallback random at (${rr},${cc})`);
+
+      if (!started) {
+        placeMines(next, mines, { r: rr, c: cc });
+        computeAdjacency(next);
+        setStarted(true);
+      }
+
+      const target = next[rr][cc];
+      if (target.isMine) {
+        target.revealed = true;
+        setBoard(next);
+        setGameOver("lost");
+        revealMines();
+        console.log(`Hard AI fallback random hit mine at (${rr},${cc})`);
+        return;
+      } else {
+        floodFill(next, gridSize, rr, cc);
+        didOpen = true;
+      }
+
+      setBoard(next);
+      if (checkWin(next)) { setGameOver("won"); revealMines(); }
+      return;
+    }
+  }
+
   // ********************************************************
   // Step 9: Last-resort: everything left is flagged: unflag one and open it
   // ********************************************************
